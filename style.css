@@ -38,7 +38,7 @@ form, table {
   max-width: 700px;
   margin: auto;
   background-color: var(--surface-color);
-  border-radius: var(--border-radius);
+  /* border-radius: var(--border-radius); */
   padding: 1.2rem;
   box-shadow: var(--shadow);
 }
@@ -170,4 +170,9 @@ td {
   font-size: .7rem;
   color: var(--muted-color);
 
+}
+footer {
+  font-size: .6rem;
+  color: var(--surface-color);
+  padding-top: 10px;
 }
