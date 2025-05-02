@@ -11,30 +11,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       row.map((val, i) => [headers[i], val])
     ));
 
-    const teamTotals = {};
+    const teamStats = {};
 
     data.forEach(entry => {
       const team = entry.Team;
       const points = parseFloat(entry['Total Points']);
 
       if (!isNaN(points)) {
-        if (!teamTotals[team]) {
-          teamTotals[team] = 0;
+        if (!teamStats[team]) {
+          teamStats[team] = { totalPoints: 0, games: 0 };
         }
-        teamTotals[team] += points;
+        teamStats[team].totalPoints += points;
+        teamStats[team].games += 1;
       }
     });
 
-    const sortedTeams = Object.entries(teamTotals)
-      .sort((a, b) => b[1] - a[1]);
+    const sortedTeams = Object.entries(teamStats)
+      .sort((a, b) => b[1].totalPoints - a[1].totalPoints);
 
     const tableBody = document.getElementById('standingsBody');
-    sortedTeams.forEach(([team, total], index) => {
+    sortedTeams.forEach(([team, stats], index) => {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${index + 1}</td>
         <td>${team}</td>
-        <td>${total.toFixed(2)}</td>
+        <td>${stats.totalPoints.toFixed(2)}</td>
+        <td>${stats.games}</td>
       `;
       tableBody.appendChild(row);
     });
