@@ -1,0 +1,173 @@
+/* style.css — AHbL dark theme v3 with teal/blue-gray colors */
+
+:root {
+  --bg-color: #1c2b2d;         /* Very dark teal background */
+  --surface-color: #253c3f;    /* Card background */
+  --accent-color: #6cbecf;     /* Muted teal accent */
+  --text-color: #e0e6e8;
+  --muted-color: #9bbfc3;
+  --border-radius: 10px;
+  --shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 1rem;
+  padding-bottom: 5rem; /* Ensure content not hidden by bottom nav */
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  overflow-x: hidden;
+  font-size: 0.8rem;
+}
+
+h1, h2 {
+  text-align: center;
+  color: var(--accent-color);
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+form, table {
+  width: 100%;
+  max-width: 700px;
+  margin: auto;
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  padding: 1.2rem;
+  box-shadow: var(--shadow);
+}
+
+label {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-weight: 500;
+  color: var(--text-color);
+  font-size: 0.8rem;
+}
+
+label small {
+  color: var(--muted-color);
+  font-size: 0.7rem;
+  font-weight: normal;
+}
+
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #3a5054;
+  background-color: #354a4d;
+  color: var(--text-color);
+  font-size: 0.8rem;
+  margin-top: 0.3rem;
+}
+
+textarea {
+  min-height: 4rem;
+}
+
+button {
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  width: 100%;
+  background-color: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: #50a5b2;
+}
+
+progress {
+  width: 100%;
+  height: 10px;
+  margin-top: 0.4rem;
+  background-color: #2d4043;
+  border-radius: 5px;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #2d4043;
+  border-radius: 5px;
+}
+
+progress::-webkit-progress-value {
+  background-color: var(--accent-color);
+  border-radius: 5px;
+}
+
+span[id$="_percent"] {
+  display: block;
+  text-align: right;
+  font-size: 0.7rem;
+  color: var(--muted-color);
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--surface-color);
+  border-top: 1px solid #3a5054;
+  display: flex;
+  justify-content: space-around;
+  padding: 0.5rem 0;
+  z-index: 999;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.bottom-nav .nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--muted-color);
+  text-decoration: none;
+  font-size: 0.75rem;
+}
+
+.bottom-nav .nav-item:hover {
+  color: var(--accent-color);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  overflow-x: auto;
+}
+
+th, td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #3a5054;
+}
+
+th {
+  background-color: #354a4d;
+  color: var(--accent-color);
+}
+
+td {
+  color: var(--text-color);
+  font-size: 0.8rem;
+}
+.targets {
+  font-size: .7rem;
+  color: var(--muted-color);
+
+}

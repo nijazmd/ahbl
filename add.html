@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AHbL Add</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  
+<body>
+  <h1>AHbL Admin Entry</h1>
+  <form id="adminForm">
+    <label for="weekNumber">Week Number</label>
+    <input type="number" id="weekNumber" name="weekNumber" required>
+
+    <label for="teamName">Team</label>
+    <select id="teamName" name="teamName" required>
+      <option value="">Select Team</option>
+      <option value="AMC">AMC</option>
+      <option value="BIS">BIS</option>
+      <option value="BOS">BOS</option>
+      <option value="CAR">CAR</option>
+      <option value="FRE">FRE</option>
+      <option value="HST">HST</option>
+      <option value="GRE">GRE</option>
+      <option value="OTT">OTT</option>
+      <option value="PNX">PNX</option>
+      <option value="ZDG">ZDG</option>
+    </select>
+
+    <div id="taskInputs"></div>
+
+    <div style="margin-top: 1em;">
+      <strong>Total Points:</strong> <span id="liveTotalPoints">0.00</span>
+    </div>
+    
+
+    <label for="comments">Comments</label>
+    <textarea id="comments" name="comments"></textarea>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="message"></div>
+
+  <script src="add.js"></script>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <span>🏠</span>
+      <span>Home</span>
+    </a>
+    <a href="add.html" class="nav-item">
+      <span>➕</span>
+      <span>Add</span>
+    </a>
+  </nav>
+  
+</body>
+</html>
