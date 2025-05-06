@@ -176,3 +176,22 @@ footer {
   color: var(--surface-color);
   padding-top: 10px;
 }
+.task-points {
+  margin-left: 10px;
+  font-weight: bold;
+  color: #336699;
+  display: inline-block;
+}
+.currentTeam {
+  font-size: 14px;
+  color: #354a4d;
+  text-align: center;
+}
+.currentTeam span {
+  font-size: 16px;
+  color: #fff;
+  font-weight: bold;
+}
+.version {
+  text-align: center;
+}
