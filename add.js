@@ -28,20 +28,34 @@ async function loadTasksMeta() {
 
     const max = parseInt(task.Max || 100, 10);
     container.innerHTML += `
-    <label for="${taskId}">
-      <span>${task.Task}</span>
-      <span class="targets">Tar: ${task.Target} | Max: ${max}</span>
-    </label>
-    <input type="number" id="${taskId}" name="${taskId}" max="${max}" min="0" required />
-    <progress id="${taskId}_progress" value="0" max="${task.Target}"></progress>
-    <span id="${taskId}_percent">0%</span>
-  `;
+  <label for="${taskId}">
+    <span>${task.Task}</span>
+    <span class="targets">Tar: ${task.Target} | Max: ${max}</span>
+  </label>
+  <input type="number" id="${taskId}" name="${taskId}" max="${max}" min="0" inputmode="numeric" enterkeyhint="next" required />
+  <progress id="${taskId}_progress" value="0" max="${task.Target}"></progress>
+  <span id="${taskId}_percent">0%</span>
+  <span id="${taskId}_points" class="task-points">0 pts</span>
+`;
+
   
 
   });
 }
 
 function setupListeners() {
+  // Automatically focus the next input when 'Enter' is pressed
+document.getElementById('taskInputs').addEventListener('keydown', (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const inputs = Array.from(document.querySelectorAll('.task-input'));
+    const index = inputs.indexOf(e.target);
+    if (index >= 0 && index < inputs.length - 1) {
+      inputs[index + 1].focus();
+    }
+  }
+});
+
   console.log("🔧 setupListeners called");
   document.getElementById('adminForm').addEventListener('submit', handleSubmit);
   console.log("✅ Submit handler attached");
@@ -99,6 +113,10 @@ function updateLiveTotalPoints() {
       if (progressBar) progressBar.value = score;
       if (percentText) percentText.textContent = `${Math.round(percent)}%`;
     }
+    const pointsSpan = document.getElementById(`${taskId}_points`);
+    const points = calculatePoints(task["Task ID"], score);
+    if (pointsSpan) pointsSpan.textContent = `${points.toFixed(2)} pts`;
+  
   });
 
   document.getElementById("liveTotalPoints").textContent = total.toFixed(2);
