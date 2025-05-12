@@ -1,29 +1,22 @@
-const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRXcCLM3cYAIQGlGdsjlBVW2g8qjnYpUsl0Nn3ESq-0AkIfr54WrHp_JeaYZfA4cpYdr-ebnLPyPkCN/pub?gid=0&single=true&output=csv';
+const dataUrl = 'https://script.google.com/macros/s/AKfycbzKLcGk1-gq19BW74v6Dw8uIvJ3EHSwWJ99OkHESa2DU1WFbJQM8HM5oZmmB9NB7_dR/exec';
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const res = await fetch(dataUrl);
-    const text = await res.text();
-    const rows = text.trim().split('\n').map(row => row.split(','));
-
-    const headers = rows[0];
-    const data = rows.slice(1).map(row => Object.fromEntries(
-      row.map((val, i) => [headers[i], val])
-    ));
+    const data = await res.json(); // Uses the Apps Script doGet() JSON output
 
     const teamStats = {};
 
     data.forEach(entry => {
       const team = entry.Team;
-      const points = parseFloat(entry['Total Points']);
+      const points = parseFloat(entry['TotalPoints']) || 0;
 
-      if (!isNaN(points)) {
-        if (!teamStats[team]) {
-          teamStats[team] = { totalPoints: 0, games: 0 };
-        }
-        teamStats[team].totalPoints += points;
-        teamStats[team].games += 1;
+      if (!teamStats[team]) {
+        teamStats[team] = { totalPoints: 0, games: 0 };
       }
+
+      teamStats[team].totalPoints += points;
+      teamStats[team].games += 1;
     });
 
     const sortedTeams = Object.entries(teamStats)
@@ -34,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td>${index + 1}</td>
-        <td>${team}</td>
+        <td><a href="team-single.html?team=${team}">${team}</a></td>
         <td>${stats.totalPoints.toFixed(2)}</td>
         <td>${stats.games}</td>
       `;
@@ -42,5 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   } catch (err) {
     console.error('Failed to load standings:', err);
+    const fallback = document.getElementById('standingsBody');
+    fallback.innerHTML = `<tr><td colspan="4">❌ Could not load standings data.</td></tr>`;
   }
 });
