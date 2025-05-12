@@ -1,7 +1,8 @@
 const currentRoundID = '1';
 
 const tasksMetaURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRXcCLM3cYAIQGlGdsjlBVW2g8qjnYpUsl0Nn3ESq-0AkIfr54WrHp_JeaYZfA4cpYdr-ebnLPyPkCN/pub?gid=971568410&single=true&output=csv';
-const postUrl = 'https://script.google.com/macros/s/AKfycbyZG9AcKmf7W0ZlNYSqF4fpYyF3-eL4gnIBlkrQK7MJwsNNrxn-TsY5rYlmS0PTwWvF6Q/exec';
+const postUrl = 'https://script.google.com/macros/s/AKfycbzKLcGk1-gq19BW74v6Dw8uIvJ3EHSwWJ99OkHESa2DU1WFbJQM8HM5oZmmB9NB7_dR/exec';
+
 
 let tasks = [];
 
@@ -154,6 +155,7 @@ async function handleSubmit(event) {
     TotalPoints: totalPoints.toFixed(2),
     ...scores,
   };
+  payload.key = "key=asnLg_2@25";
 
 
   try {
