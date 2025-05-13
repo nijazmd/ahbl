@@ -30,12 +30,16 @@ async function loadData() {
     const team = entry.Team;
     if (!teamStats[team]) {
       teamStats[team] = {
+        gamesPlayed: 0,
         completions: 0,
         maxes: 0,
         totalTasks: 0,
         totalPoints: 0
       };
     }
+
+    teamStats[team].gamesPlayed++;
+
 
     for (let i = 1; i <= 24; i++) {
       const key = `T${i}_Score`;
@@ -59,12 +63,19 @@ async function loadData() {
 
 function render(teamStats) {
   const tbody = document.querySelector("#teamTable tbody");
-  const teams = Object.entries(teamStats).sort((a, b) => a[1].totalPoints - b[1].totalPoints);
+  const teams = Object.entries(teamStats).sort((a, b) => {
+    if (a[1].gamesPlayed !== b[1].gamesPlayed) {
+      return a[1].gamesPlayed - b[1].gamesPlayed; // Ascending by games played
+    }
+    return a[1].totalPoints - b[1].totalPoints; // Ascending by total points
+  });
+
 
   teams.forEach(([team, stats]) => {
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><a href="team-single.html?team=${team}">${team}</a></td>
+      <td>${stats.gamesPlayed}</td>
       <td>${stats.completions}/${stats.totalTasks}</td>
       <td>${stats.maxes}/${stats.totalTasks}</td>
       <td>${stats.totalPoints.toFixed(2)}</td>

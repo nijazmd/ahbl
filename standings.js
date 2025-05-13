@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       row.innerHTML = `
         <td>${index + 1}</td>
         <td><a href="team-single.html?team=${team}">${team}</a></td>
-        <td>${stats.totalPoints.toFixed(2)}</td>
         <td>${stats.games}</td>
+        <td>${stats.totalPoints.toFixed(2)}</td>
       `;
       tableBody.appendChild(row);
     });
