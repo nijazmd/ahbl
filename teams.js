@@ -33,6 +33,7 @@ async function loadData() {
         gamesPlayed: 0,
         completions: 0,
         maxes: 0,
+        shortWeeks: 0,
         totalTasks: 0,
         totalPoints: 0
       };
@@ -70,6 +71,11 @@ function render(teamStats) {
     return a[1].totalPoints - b[1].totalPoints; // Ascending by total points
   });
 
+  if (teams.length > 0) {
+    const topTeam = teams[0][0]; // Get the team name (e.g., "AMC")
+    localStorage.setItem("currentTeam", topTeam);
+  }
+
 
   teams.forEach(([team, stats]) => {
     const row = document.createElement("tr");
@@ -78,8 +84,10 @@ function render(teamStats) {
       <td>${stats.gamesPlayed}</td>
       <td>${stats.completions}/${stats.totalTasks}</td>
       <td>${stats.maxes}/${stats.totalTasks}</td>
+      <td>${stats.shortWeeks}</td>
       <td>${stats.totalPoints.toFixed(2)}</td>
     `;
+
     tbody.appendChild(row);
   });
 }

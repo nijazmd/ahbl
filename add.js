@@ -8,9 +8,23 @@ let tasks = [];
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("📦 DOMContentLoaded started");
   await loadTasksMeta();
+  setDefaultStartingDate();
   setupListeners();
   console.log("✅ Page setup complete");
 });
+
+function setDefaultStartingDate() {
+  const input = document.getElementById('startingDate');
+  const today = new Date();
+
+  // Go back to last week's Monday
+  const day = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const offsetToLastMonday = ((day + 6) % 7) + 7;
+  const lastMonday = new Date(today);
+  lastMonday.setDate(today.getDate() - offsetToLastMonday);
+
+  input.value = lastMonday.toISOString().split('T')[0]; // format YYYY-MM-DD
+}
 
 async function loadTasksMeta() {
   console.log("📥 Loading tasksMeta...");
@@ -126,10 +140,10 @@ async function handleSubmit(event) {
 
   const form = document.getElementById('adminForm');
   const formData = new FormData(form);
-  const weekNumber = parseInt(formData.get("weekNumber"), 10);
-  const { startDate, endDate } = calculateDateRange(weekNumber);
+  // const weekNumber = parseInt(formData.get("weekNumber"), 10);
+  // const { startDate, endDate } = calculateDateRange(weekNumber);
   const team = formData.get("teamName");
-
+  
   let totalPoints = 0;
   const scores = {};
   tasks.forEach(task => {
@@ -138,14 +152,18 @@ async function handleSubmit(event) {
     scores[scoreField] = score;
     totalPoints += calculatePoints(scoreField, score);
   });
-
+  
+  const isShortWeek = formData.get("ShortWeek") === "on";
+  
   const payload = {
     RoundID: currentRoundID,
-    WeekNumber: weekNumber,
-    StartDate: startDate,
-    EndDate: endDate,
+    // WeekNumber: weekNumber,
+    StartingDate: formData.get("StartingDate") || "",
+    // StartDate: startDate,
+    // EndDate: endDate,
     Team: team,
     Player: "",
+    ShortWeek: isShortWeek ? "TRUE" : "FALSE",
     Comments: formData.get("comments") || "",
     TotalPoints: totalPoints.toFixed(2),
     ...scores,
@@ -188,12 +206,12 @@ async function handleSubmit(event) {
   }
 }
 
-function calculateDateRange(weekNumber) {
-  const base = new Date("2025-01-01");
-  const start = new Date(base.getTime() + (weekNumber - 1) * 7 * 86400000);
-  const end = new Date(start.getTime() + 6 * 86400000);
-  return {
-    startDate: start.toISOString().split('T')[0],
-    endDate: end.toISOString().split('T')[0]
-  };
-}
+// function calculateDateRange(weekNumber) {
+//   const base = new Date("2025-01-01");
+//   const start = new Date(base.getTime() + (weekNumber - 1) * 7 * 86400000);
+//   const end = new Date(start.getTime() + 6 * 86400000);
+//   return {
+//     startDate: start.toISOString().split('T')[0],
+//     endDate: end.toISOString().split('T')[0]
+//   };
+// }

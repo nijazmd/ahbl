@@ -20,19 +20,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const sortedTeams = Object.entries(teamStats)
-      .sort((a, b) => b[1].totalPoints - a[1].totalPoints);
-
-    const tableBody = document.getElementById('standingsBody');
-    sortedTeams.forEach(([team, stats], index) => {
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${index + 1}</td>
-        <td><a href="team-single.html?team=${team}">${team}</a></td>
-        <td>${stats.games}</td>
-        <td>${stats.totalPoints.toFixed(2)}</td>
-      `;
-      tableBody.appendChild(row);
+    .sort((a, b) => {
+      if (a[1].games !== b[1].games) {
+        return a[1].games - b[1].games; // Ascending games played
+      }
+      return a[1].totalPoints - b[1].totalPoints; // Ascending total points
     });
+
+  // ✅ Update the "Now: ..." section with the top team
+  if (sortedTeams.length > 0) {
+    const topTeam = sortedTeams[0][0];
+    const currentTeamSpan = document.querySelector('.currentTeam span');
+    if (currentTeamSpan) currentTeamSpan.textContent = topTeam;
+  }
+
+  // Render table
+  const tableBody = document.getElementById('standingsBody');
+  sortedTeams.forEach(([team, stats], index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td><a href="team-single.html?team=${team}">${team}</a></td>
+      <td>${stats.games}</td>
+      <td>${stats.totalPoints.toFixed(2)}</td>
+    `;
+    tableBody.appendChild(row);
+  });
+
   } catch (err) {
     console.error('Failed to load standings:', err);
     const fallback = document.getElementById('standingsBody');

@@ -63,7 +63,9 @@ label small {
   font-weight: normal;
 }
 
+input,
 input[type="number"],
+input[type="date"],
 select,
 textarea {
   width: 100%;
@@ -75,9 +77,16 @@ textarea {
   font-size: 0.8rem;
   margin-top: 0.3rem;
 }
-
 textarea {
   min-height: 4rem;
+}
+
+input[type="checkbox"] {
+  width: auto;
+}
+.checkBox {
+  justify-content: flex-start;
+  align-items: center;
 }
 
 button {

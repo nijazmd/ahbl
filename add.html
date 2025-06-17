@@ -10,8 +10,10 @@
 <body>
   <h1>AHbL Admin Entry</h1>
   <form id="adminForm">
-    <label for="weekNumber">Week Number</label>
-    <input type="number" id="weekNumber" name="weekNumber" value="1" required>
+    <!-- <label for="weekNumber">Week Number</label> -->
+    <!-- <input type="number" id="weekNumber" name="weekNumber" value="1" required> -->
+    <label for="startingDate">Starting Date</label>
+    <input type="date" id="startingDate" name="StartingDate" required>
 
     <label for="teamName">Team</label>
     <select id="teamName" name="teamName" required>
@@ -29,6 +31,11 @@
     </select>
 
     <div id="taskInputs"></div>
+
+    <label for="shortWeek" class="checkBox">
+      <input type="checkbox" id="shortWeek" name="ShortWeek">
+      Short-Week
+    </label>    
 
     <div style="margin-top: 1em;">
       <strong>Total Points:</strong> <span id="liveTotalPoints">0.00</span>
