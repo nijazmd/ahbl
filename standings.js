@@ -3,7 +3,7 @@ const dataUrl = 'https://script.google.com/macros/s/AKfycbzKLcGk1-gq19BW74v6Dw8u
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const res = await fetch(dataUrl);
-    const data = await res.json(); // Uses the Apps Script doGet() JSON output
+    const data = await res.json();
 
     const teamStats = {};
 
@@ -19,37 +19,48 @@ document.addEventListener('DOMContentLoaded', async () => {
       teamStats[team].games += 1;
     });
 
-    const sortedTeams = Object.entries(teamStats)
-    .sort((a, b) => {
-      if (a[1].games !== b[1].games) {
-        return a[1].games - b[1].games; // Ascending games played
-      }
-      return a[1].totalPoints - b[1].totalPoints; // Ascending total points
+    // Build array with PA
+    const teamsArray = Object.entries(teamStats).map(([team, stats]) => {
+      const pa = stats.games > 0 ? stats.totalPoints / stats.games : 0;
+      return { team, games: stats.games, totalPoints: stats.totalPoints, pa };
     });
 
-  // ✅ Update the "Now: ..." section with the top team
-  if (sortedTeams.length > 0) {
-    const topTeam = sortedTeams[0][0];
-    const currentTeamSpan = document.querySelector('.currentTeam span');
-    if (currentTeamSpan) currentTeamSpan.textContent = topTeam;
-  }
+    // NEW: determine "Now" team -> lowest G, then lowest PA, then name asc
+    const nowTeamObj = teamsArray.reduce((best, t) => {
+      if (!best) return t;
+      if (t.games !== best.games) return t.games < best.games ? t : best;
+      if (t.pa !== best.pa) return t.pa < best.pa ? t : best;
+      return t.team.localeCompare(best.team) < 0 ? t : best;
+    }, null);
+    const nowTeam = nowTeamObj ? nowTeamObj.team : null;
 
-  // Render table
-  const tableBody = document.getElementById('standingsBody');
-  sortedTeams.forEach(([team, stats], index) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${index + 1}</td>
-      <td><a href="team-single.html?team=${team}">${team}</a></td>
-      <td>${stats.games}</td>
-      <td>${stats.totalPoints.toFixed(2)}</td>
-    `;
-    tableBody.appendChild(row);
-  });
+    // Sort table by PA (desc); tie-breakers: Pts desc, G desc, Team asc
+    teamsArray.sort((a, b) => {
+      if (b.pa !== a.pa) return b.pa - a.pa;
+      if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+      if (b.games !== a.games) return b.games - a.games;
+      return a.team.localeCompare(b.team);
+    });
+
+    // Render table
+    const tableBody = document.getElementById('standingsBody');
+    tableBody.innerHTML = '';
+    teamsArray.forEach((rowData, index) => {
+      const row = document.createElement('tr');
+      if (rowData.team === nowTeam) row.classList.add('active');
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td><a href="team-single.html?team=${encodeURIComponent(rowData.team)}">${rowData.team}</a></td>
+        <td>${rowData.games}</td>
+        <td>${rowData.pa.toFixed(2)}</td>
+        <td>${rowData.totalPoints.toFixed(2)}</td>
+      `;
+      tableBody.appendChild(row);
+    });
 
   } catch (err) {
     console.error('Failed to load standings:', err);
     const fallback = document.getElementById('standingsBody');
-    fallback.innerHTML = `<tr><td colspan="4">❌ Could not load standings data.</td></tr>`;
+    fallback.innerHTML = `<tr><td colspan="5">❌ Could not load standings data.</td></tr>`;
   }
 });

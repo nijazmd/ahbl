@@ -180,6 +180,11 @@ td {
   color: var(--text-color);
   font-size: 0.8rem;
 }
+
+tr.active {
+  background: #2d5c62;
+}
+
 .targets {
   font-size: .7rem;
   color: var(--muted-color);
@@ -239,3 +244,154 @@ progress {
   appearance: none;
 }
 
+.shortweek-group {
+  margin: 1rem 0;
+  border: 0;
+  padding: 0;
+}
+.shortweek-group legend {
+  font-weight: 600;
+  margin-bottom: .5rem;
+  font-size: .9rem;
+}
+.shortweek-group .radio {
+  display: inline-block;
+  margin-right: .5rem;
+}
+.shortweek-group input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: .5rem .75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.15);
+  cursor: pointer;
+}
+.shortweek-group input[type="radio"]:checked {
+  border-color: rgba(255,215,0,.9);
+  box-shadow: 0 0 0 2px rgba(255,215,0,.25) inset;
+}
+.shortweek-group input[type="radio"] + span { display:none; } /* keep labels lean */
+/* ---- Fixed layout sizes ---- */
+:root {
+  --bottom-nav-h: 56px;
+  --actionbar-h: 64px;
+  --gap: 8px;
+}
+
+/* Give the bottom nav a predictable height */
+.bottom-nav {
+  height: var(--bottom-nav-h);
+  padding: 0 .75rem;
+  align-items: center;
+}
+
+/* Ensure content never hides behind action bar + bottom nav */
+body {
+  padding-bottom: calc(var(--bottom-nav-h) + var(--actionbar-h) + 16px);
+}
+
+/* ---- Fixed action bar ---- */
+.form-actionbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--bottom-nav-h); /* sits above bottom nav */
+  z-index: 998;
+  background: var(--surface-color);
+  border-top: 1px solid #3a5054;
+  box-shadow: 0 -2px 6px rgba(0,0,0,.35);
+  height: var(--actionbar-h);
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--gap);
+  align-items: center;
+  padding: 0 .75rem;
+}
+
+.form-actionbar .tp {
+  font-size: .9rem;
+  color: var(--text-color);
+}
+.form-actionbar .tp strong {
+  color: var(--accent-color);
+  margin-right: .35rem;
+}
+
+.form-actionbar .actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+
+/* Buttons inside action bar: side-by-side, not full-width */
+.form-actionbar .actions button {
+  width: auto;
+  margin-top: 0; /* override global button margin */
+  padding: .6rem .75rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: .85rem;
+}
+
+.btn-primary {
+  background-color: var(--accent-color);
+  color: #fff;
+}
+.btn-primary:hover { background-color: #50a5b2; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid rgba(255,255,255,.18);
+}
+.btn-secondary:hover {
+  background: rgba(255,255,255,.06);
+}
+
+/* ---- Tiny inline +/- controls ---- */
+.task-input-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* − | input | + */
+  align-items: center;
+  gap: .35rem;
+  margin-top: .35rem;
+}
+
+/* Override global button styles for the step buttons */
+.task-input-row .step-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0;
+  margin: 0;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: #2f4447;
+  color: var(--text-color);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Remove the global 'button' 100% width + margin for these small buttons */
+.task-input-row .step-btn,
+.task-input-row .step-btn:hover {
+  width: 28px !important;
+  margin-top: 0 !important;
+  background-clip: padding-box;
+}
+
+.task-input-row .task-input {
+  min-width: 0;
+  width: 100%;
+  padding: .5rem .6rem;
+}
+
+/* Optional: slightly compact progress spacing since inputs are tighter now */
+progress { margin-top: .3rem; }
+
+.subinfo {
+  color: #6e797c;
+}

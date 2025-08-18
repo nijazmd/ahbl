@@ -7,8 +7,7 @@ async function loadTaskMeta() {
   const res = await fetch(tasksMetaURL);
   const csv = await res.text();
   const rows = csv.trim().split('\n').map(r => r.split(','));
-  const headers = rows[0];
-
+  // headers: [TaskID, Task, Target, CompletionPoint, FractionPoint, IsAvoidance, Max, ...]
   rows.slice(1).forEach(row => {
     const id = `T${row[0]}_Score`;
     taskMeta[id] = {
@@ -19,6 +18,20 @@ async function loadTaskMeta() {
   });
 }
 
+function normalizeShortWeek(sw) {
+  // Expected: "7" | "6" | "5" | "4"
+  // Legacy fallback:
+  //  - "TRUE"  → assume 6d short week
+  //  - "FALSE" → 7d
+  if (sw === null || sw === undefined || sw === '') return 7;
+  const n = parseInt(sw, 10);
+  if (!isNaN(n) && [4,5,6,7].includes(n)) return n;
+
+  const s = String(sw).trim().toLowerCase();
+  if (s === 'true')  return 6;
+  if (s === 'false') return 7;
+  return 7;
+}
 
 async function loadData() {
   const res = await fetch(dataURL);
@@ -33,15 +46,22 @@ async function loadData() {
         gamesPlayed: 0,
         completions: 0,
         maxes: 0,
-        shortWeeks: 0,
         totalTasks: 0,
-        totalPoints: 0
+        totalPoints: 0,
+        d7: 0, d6: 0, d5: 0, d4: 0
       };
     }
 
     teamStats[team].gamesPlayed++;
 
+    // Count short-week bucket from ShortWeek column
+    const days = normalizeShortWeek(entry.ShortWeek);
+    if (days === 7) teamStats[team].d7++;
+    else if (days === 6) teamStats[team].d6++;
+    else if (days === 5) teamStats[team].d5++;
+    else if (days === 4) teamStats[team].d4++;
 
+    // Per-task completion / max counts
     for (let i = 1; i <= 24; i++) {
       const key = `T${i}_Score`;
       const score = parseFloat(entry[key]);
@@ -64,30 +84,33 @@ async function loadData() {
 
 function render(teamStats) {
   const tbody = document.querySelector("#teamTable tbody");
+  tbody.innerHTML = '';
+
   const teams = Object.entries(teamStats).sort((a, b) => {
     if (a[1].gamesPlayed !== b[1].gamesPlayed) {
-      return a[1].gamesPlayed - b[1].gamesPlayed; // Ascending by games played
+      return a[1].gamesPlayed - b[1].gamesPlayed; // Asc by games played
     }
-    return a[1].totalPoints - b[1].totalPoints; // Ascending by total points
+    return a[1].totalPoints - b[1].totalPoints;   // Asc by total points
   });
 
   if (teams.length > 0) {
-    const topTeam = teams[0][0]; // Get the team name (e.g., "AMC")
+    const topTeam = teams[0][0];
     localStorage.setItem("currentTeam", topTeam);
   }
-
 
   teams.forEach(([team, stats]) => {
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><a href="team-single.html?team=${team}">${team}</a></td>
       <td>${stats.gamesPlayed}</td>
+      <td class="subinfo">${stats.d7}</td>
+      <td class="subinfo">${stats.d6}</td>
+      <td class="subinfo">${stats.d5}</td>
+      <td class="subinfo">${stats.d4}</td>
       <td>${stats.completions}/${stats.totalTasks}</td>
       <td>${stats.maxes}/${stats.totalTasks}</td>
-      <td>${stats.shortWeeks}</td>
       <td>${stats.totalPoints.toFixed(2)}</td>
     `;
-
     tbody.appendChild(row);
   });
 }
