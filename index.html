@@ -1,43 +1,50 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>AHbL Home</title>
-    <link rel="stylesheet" href="style.css">
-  </head>
-  
-<body>
-  <!-- <div class="currentTeam">Now: <span>ZDG</span></div> -->
-  <h2 style="text-align:center;">AHbL Standings</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>R</th>
-        <th>T</th>
-        <th>G</th>
-        <th>PA</th>
-        <th>Pts</th>
-      </tr>
-    </thead>
-    <tbody id="standingsBody"></tbody>
-  </table>
+<head>
+  <title>AHL Standings</title>
+  <meta meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <nav class="bottom-nav">
-    <a href="index.html" class="nav-item">
-      <span>🏠</span>
-      <span>Home</span>
-    </a>
-    <a href="teams.html" class="nav-item">
-      <span>👥</span>
-      <span>Teams</span>
-    </a>
-    <a href="add.html" class="nav-item">
-      <span>➕</span>
-      <span>Now</span>
-    </a>
-  </nav>
-  <footer class="version">ver 0.4.0 818</footer>
-  <script src="standings.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <!-- <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f4f4f4; }
+  </style> -->
+</head>
+<body>
+  <h2>AHL Team Standings</h2>
+  <div class="table-container">
+    <table id="standingsTable">
+      <thead>
+        <tr>
+          <th>Position</th>
+          <th>Team</th>
+          <th>Points</th>
+          <th>Goals For</th>
+          <th>Goals Against</th>
+          <th>Goal Difference</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data will be populated dynamically here -->
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Last 5 Game Results</h2>
+<div id="last5GamesContainer" class="recent-games-grid"></div>
+
+
+<nav class="bottom-nav">
+  <a href="index.html" class="nav-icon">🏠</a>
+  <a href="team.html" class="nav-icon">🛡️</a>
+  <a href="players.html" class="nav-icon">🏒</a>
+  <a href="add.html" class="nav-icon">➕</a>
+</nav>
+
+<script src="index.js"></script>
+
+<div class="version">0.1.1 250824</div>
 </body>
 </html>
