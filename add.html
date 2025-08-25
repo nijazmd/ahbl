@@ -1,104 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <base target="_top">
-    <title>Add Game Data</title>
-    <meta meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-    <link rel="stylesheet" href="style.css"><script src="add.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>AHbL Add</title>
+    <link rel="stylesheet" href="style.css">
   </head>
-  <body>
-    <form onsubmit="submitForm(event)" style="padding-bottom: 160px;">
-      <label>Date: <input type="date" id="date" required></label>
+  
+<body>
+  <h1>AHbL Admin Entry</h1>
+  <form id="adminForm" novalidate>
+    <label for="startingDate">Starting Date</label>
+    <input type="date" id="startingDate" name="StartingDate" required>
 
-      <label>Team:
-        <select id="team" required></select>
+    <label for="teamName">Team</label>
+    <select id="teamName" name="teamName" required>
+      <option value="">Select Team</option>
+      <option value="AMC">AMC</option>
+      <option value="BIS">BIS</option>
+      <option value="BOS">BOS</option>
+      <option value="CAR">CAR</option>
+      <option value="FRE">FRE</option>
+      <option value="HST">HST</option>
+      <option value="GRE">GRE</option>
+      <option value="OTT">OTT</option>
+      <option value="PNX">PNX</option>
+      <option value="ZDG">ZDG</option>
+    </select>
+
+    <!-- Short-week selection: Regular(7), 6d(6), 5d(5), 4d(4) -->
+    <fieldset class="shortweek-group">
+      <legend>Week Type</legend>
+      <label class="radio">
+        <input type="radio" name="ShortWeek" value="7" checked>
+        Regular
       </label>
-
-      <label>Opponent:
-        <select id="opponent" required onchange="handleOpponentChange()">
-          <option value="Other">Other</option>
-        </select>
+      <label class="radio">
+        <input type="radio" name="ShortWeek" value="6">
+        6d
       </label>
+      <label class="radio">
+        <input type="radio" name="ShortWeek" value="5">
+        5d
+      </label>
+      <label class="radio">
+        <input type="radio" name="ShortWeek" value="4">
+        4d
+      </label>
+    </fieldset>
 
-      <div id="otherTeamContainer" style="display:none;">
-        <label>Other Team Name:
-          <input type="text" id="otherTeamName" placeholder="Enter opponent team name">
-        </label>
-      </div>
+    <div id="taskInputs"></div>
 
-      <div>
-        <label class="radio-group">
-          <input type="radio" name="reg" value="Regular" checked>
-          <span>Regular</span>
-        </label>
-        <label class="radio-group">
-          <input type="radio" name="reg" value="ExtraTime">
-          <span>Extra Time</span>
-        </label>
-        <label class="radio-group">
-          <input type="radio" name="reg" value="Shootout">
-          <span>Shootout</span>
-        </label>
+    <div class="form-actionbar">
+      <div class="tp">
+        <strong>Total:</strong> <span id="liveTotalPoints">0.00</span>
+        <div id="message"></div>
       </div>
-      
+      <div class="actions">
+        <button type="button" id="saveBtn" class="btn-secondary">Save</button>
+        <button type="submit" form="adminForm" id="submitBtn" class="btn-primary">Submit</button>
+      </div>
+    </div>
+  </form>
 
-      <h3>Team Player Stats</h3>
-      <input type="text" id="teamSearch" placeholder="Search team players..." oninput="filterPlayers('team')">
-      <div id="teamPlayers"></div>
-      
-      <div id="opponentPlayersContainer" style="display:none;">
-        <h3>Opponent Player Stats</h3>
-        <input type="text" id="opponentSearch" placeholder="Search opponent players..." oninput="filterPlayers('opponent')">
-        <div id="opponentPlayers"></div>
-      </div>
-      
-      <!-- Sticky footer (fixed above bottom nav) -->
-      <div class="sticky-cta">
-        <div class="totalDisplay">
-          <div class="splitTwo">
-            <label>Goals
-              <input type="number" id="teamGoals" value="0" required>
-            </label>
-            <div class="counter">
-              <label>Conceded</label>
-              <button type="button" onclick="adjust('goalsConceded', -1)">−</button>
-              <input type="number" id="goalsConceded" value="0" required>
-              <button type="button" onclick="adjust('goalsConceded', 1)">+</button>
-            </div>
-          </div>
-      
-          <div id="shootoutStats" style="display:none;">
-            <div class="splitTwo">
-              <label>Shootout Attempts
-                <input type="number" id="teamShootOutAttempts" value="0">
-              </label>
-              <label>Shootout Goals
-                <input type="number" id="teamSOGoals" value="0">
-              </label>
-            </div>
-            <div class="splitTwo">
-              <label>Opponent Attempts
-                <input type="number" id="oppShootOutAttempts" value="0">
-              </label>
-              <label>Opponent Goals
-                <input type="number" id="oppSOGoals" value="0">
-              </label>
-            </div>
-          </div>
-      
-          <button type="submit">Submit</button>
-        </div>
-      </div>
-      
-    </form>
-    <nav class="bottom-nav">
-      <a href="index.html" class="nav-icon">🏠</a>
-      <a href="team.html" class="nav-icon">🛡️</a>
-      <a href="players.html" class="nav-icon">🏒</a>
-      <a href="add.html" class="nav-icon">➕</a>
-    </nav>
-    
-  </body>
+  
+  <script src="add.js"></script>
+  
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <span>🏠</span>
+      <span>Home</span>
+    </a>
+    <a href="teams.html" class="nav-item">
+      <span>👥</span>
+      <span>Teams</span>
+    </a>
+    <a href="add.html" class="nav-item">
+      <span>➕</span>
+      <span>Now</span>
+    </a>
+  </nav>
+  
+</body>
 </html>

@@ -1,367 +1,382 @@
-const scriptURL = "https://script.google.com/macros/s/AKfycbyZ7XbB0T5xsrPKYJ_3vV5u3-k1hw9j_AK2Tp2cHXqBplsnbEtBMETGx8Vsft-_cfRU/exec";
+/* add.js — AHbL Add Page (single draft, fixed status, robust restore) */
 
-const POINTS_CONFIG = {
-  RegulationWin: 2,
-  RegulationLoss: 0,
-  ExtratimeWin: 2,
-  ExtratimeLoss: 1,
-  ShootoutWin: 2,
-  ShootoutLoss: 1
-};
+const currentRoundID = '1';
 
-let allPlayers = [];
-let allTeams = [];
+const tasksMetaURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRXcCLM3cYAIQGlGdsjlBVW2g8qjnYpUsl0Nn3ESq-0AkIfr54WrHp_JeaYZfA4cpYdr-ebnLPyPkCN/pub?gid=971568410&single=true&output=csv';
+const postUrl      = 'https://script.google.com/macros/s/AKfycbzKLcGk1-gq19BW74v6Dw8uIvJ3EHSwWJ99OkHESa2DU1WFbJQM8HM5oZmmB9NB7_dR/exec';
+const draftsGetUrl = `${postUrl}?sheet=AHbL_Drafts`;
 
-window.onload = async () => {
-  await loadTeamsAndPlayers();
-  populateTeamDropdowns();
-  populatePlayerInputs();
-  handleOpponentChange();
+let tasks = [];
+const taskConfigByField = {};
 
-  // Toggle shootout stats visibility
-  document.querySelectorAll('input[name="reg"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      const isShootout = document.querySelector('input[name="reg"]:checked').value === "Shootout";
-      document.getElementById("shootoutStats").style.display = isShootout ? "block" : "none";
-      populatePlayerInputs(); // ✅ re-render team
-      handleOpponentChange(); // ✅ re-render opponent
-    });
-  });
-  
-  
-
-  // Set today's date as default
-  const today = new Date().toISOString().split("T")[0];
-  document.getElementById("date").value = today;
-
-  document.getElementById("team").addEventListener("change", function() {
-    populatePlayerInputs(); // Re-populate player inputs for the selected home team
-    updateGoals(); // Update Team Goals based on the selected team
-  });
-};
-
-// Function to load teams and players data
-function loadTeamsAndPlayers() {
-  return fetch(scriptURL + "?action=loadTeamsAndPlayers")
-    .then(response => response.json())
-    .then(data => {
-      allTeams = data.teams;
-      allPlayers = data.players;
-      console.log("Teams and Players loaded successfully:", allTeams, allPlayers); // TESTING
-    })
-    .catch(error => console.error("Failed to load data:", error));
-}
-
-// Function to populate team dropdowns
-function populateTeamDropdowns() {
-  const teamSelect = document.getElementById("team");
-  const opponentSelect = document.getElementById("opponent");
-
-  teamSelect.innerHTML = "";
-  opponentSelect.innerHTML = '<option value="Other">Other</option>';
-
-  allTeams.forEach(team => {
-    const opt1 = new Option(team, team);
-    const opt2 = new Option(team, team);
-    teamSelect.appendChild(opt1);
-    opponentSelect.appendChild(opt2);
-  });
-}
-
-function renderPlayers(playersList, containerId, prefix) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = "";
-
-  const isShootout = document.querySelector('input[name="reg"]:checked')?.value === "Shootout";
-
-  // Sort alphabetically (case-insensitive)
-  playersList
-    .slice() // avoid mutating original array
-    .sort((a, b) => a.PlayerName.localeCompare(b.PlayerName, undefined, { sensitivity: "base" }))
-    .forEach(p => {
-      const div = document.createElement("div");
-
-      // searchable class + dataset
-      div.classList.add("player-entry");
-      div.dataset.name = p.PlayerName.toLowerCase();
-
-      div.innerHTML = `
-        <strong>${p.PlayerName}</strong>
-        <div class="dual-input-row">
-          <div class="input-group">
-            <label>Goals</label>
-            <div class="counter">
-              <button type="button" onclick="adjust('${prefix}_g_${p.PlayerID}', -1)">−</button>
-              <input type="number" value="0" id="${prefix}_g_${p.PlayerID}" oninput="updateGoals()">
-              <button type="button" onclick="adjust('${prefix}_g_${p.PlayerID}', 1)">+</button>
-            </div>
-          </div>
-
-          <div class="input-group">
-            <label>Assists</label>
-            <div class="counter">
-              <button type="button" onclick="adjust('${prefix}_a_${p.PlayerID}', -1)">−</button>
-              <input type="number" value="0" id="${prefix}_a_${p.PlayerID}">
-              <button type="button" onclick="adjust('${prefix}_a_${p.PlayerID}', 1)">+</button>
-            </div>
-          </div>
-        </div>
-
-        ${isShootout ? `
-          Shootout Attempt? <input type="checkbox" id="${prefix}_so_${p.PlayerID}" onchange="toggleSO(${p.PlayerID}, '${prefix}')">
-          <span id="${prefix}_goal_label_${p.PlayerID}" style="display:none">
-            Goal Scored? <input type="checkbox" id="${prefix}_so_goal_${p.PlayerID}" onchange="updateTeamShootoutStats()">
-          </span><br>` : ""}
-        <br>`;
-      container.appendChild(div);
-    });
-}
-
-
-
-
-// Function to calculate and update Team Goals and Goals Conceded
-function updateGoals() {
-  const team = document.getElementById("team").value;
-  const opponent = document.getElementById("opponent").value;
-
-  // Team goals = sum of team player goals
-  const teamPlayers = allPlayers.filter(p => p.Team === team);
-  const teamGoals = teamPlayers.reduce((sum, p) => {
-    const el = document.getElementById("team_g_" + p.PlayerID);
-    return sum + (parseInt(el?.value || 0) || 0);
-  }, 0);
-  document.getElementById("teamGoals").value = teamGoals;
-
-  // Goals Conceded:
-  // If opponent is tracked, auto-sum from their players.
-  // If opponent is "Other", DO NOT overwrite (let the user enter manually).
-  const concededInput = document.getElementById("goalsConceded");
-  if (opponent !== "Other") {
-    const opponentPlayers = allPlayers.filter(p => p.Team === opponent);
-    const goalsConceded = opponentPlayers.reduce((sum, p) => {
-      const el = document.getElementById("opponent_g_" + p.PlayerID);
-      return sum + (parseInt(el?.value || 0) || 0);
-    }, 0);
-    concededInput.value = goalsConceded;
-  }
-}
-
-
-function filterPlayers(prefix) {
-  const searchTerm = document.getElementById(`${prefix}Search`).value.toLowerCase();
-  const container = document.getElementById(`${prefix}Players`);
-  const players = container.querySelectorAll('.player-entry');
-  players.forEach(p => {
-    const name = p.dataset.name;
-    p.style.display = name.includes(searchTerm) ? "block" : "none";
-  });
-}
-
-// SHOOTOUT STATS FOR PLAYERS
-function toggleSO(playerId, prefix) {
-  const label = document.getElementById(`${prefix}_goal_label_${playerId}`);
-  const attemptChecked = document.getElementById(`${prefix}_so_${playerId}`).checked;
-  label.style.display = attemptChecked ? "inline" : "none";
-
-  updateTeamShootoutStats(); // recalculate totals
-}
-
-
-function updateTeamShootoutStats() {
-  const team = document.getElementById("team").value;
-  const opponent = document.getElementById("opponent").value;
-
-  let teamAttempts = 0, teamGoals = 0;
-  let oppAttempts = 0, oppGoals = 0;
-
-  allPlayers.forEach(p => {
-    // Team
-    if (p.Team === team) {
-      const so = document.getElementById("team_so_" + p.PlayerID);
-      const goal = document.getElementById("team_so_goal_" + p.PlayerID);
-      if (so?.checked) {
-        teamAttempts++;
-        if (goal?.checked) teamGoals++;
-      }
-    }
-
-    // Opponent
-    if (opponent !== "Other" && p.Team === opponent) {
-      const so = document.getElementById("opponent_so_" + p.PlayerID);
-      const goal = document.getElementById("opponent_so_goal_" + p.PlayerID);
-      if (so?.checked) {
-        oppAttempts++;
-        if (goal?.checked) oppGoals++;
-      }
-    }
-  });
-
-  document.getElementById("teamShootOutAttempts").value = teamAttempts;
-  document.getElementById("teamSOGoals").value = teamGoals;
-  document.getElementById("oppShootOutAttempts").value = oppAttempts;
-  document.getElementById("oppSOGoals").value = oppGoals;
-}
-
-
-// Populate player inputs for the selected team
-function populatePlayerInputs() {
-  const team = document.getElementById("team").value;
-  const teamPlayers = allPlayers.filter(p => p.Team === team);
-  renderPlayers(teamPlayers, "teamPlayers", "team");
-  updateGoals();  // Update Team Goals when players are populated
-  updateTeamShootoutStats();
-
-}
-
-// Handle opponent selection change
-function handleOpponentChange() {
-  const opponent = document.getElementById("opponent").value;
-  const otherContainer = document.getElementById("otherTeamContainer");
-  const opponentPlayersContainer = document.getElementById("opponentPlayersContainer");
-
-  if (opponent === "Other") {
-    otherContainer.style.display = "block";
-    opponentPlayersContainer.style.display = "none";
-  } else {
-    otherContainer.style.display = "none";
-    opponentPlayersContainer.style.display = "block";
-
-    const players = allPlayers.filter(p => p.Team === opponent);
-    renderPlayers(players, "opponentPlayers", "opponent");
-    updateGoals();  // Update Goals when opponent is changed
-    updateTeamShootoutStats();
-
-  }
-}
-
-function adjust(inputId, delta) {
-  const input = document.getElementById(inputId);
-  let value = parseInt(input.value) || 0;
-  value += delta;
-  if (value < 0) value = 0;
-  input.value = value;
-  if (inputId.includes("_g_")) updateGoals();  // recalculate team goals if needed
-}
-
-
-// Submit the form with game data
-async function submitForm(event) {
-  event.preventDefault();
-
-  const team = document.getElementById("team").value;
-  const opponentValue = document.getElementById("opponent").value;
-  const opponentType = opponentValue === "Other" ? "Other" : "Tracked";
-  const opponentName = opponentType === "Other"
-    ? document.getElementById("otherTeamName").value
-    : opponentValue;
-
-  const gameType = document.querySelector('input[name="reg"]:checked').value;
-  const isShootout = gameType === "Shootout";
-
-  // Initialize data object
-  const data = {
-    Date: document.getElementById("date").value,
-    Team: team,
-    Opponent: opponentValue,
-    OpponentType: opponentType,
-    OpponentTeamName: opponentName,
-    GameType: gameType,
-    TeamGoals: document.getElementById("teamGoals").value,
-    GoalsConceded: document.getElementById("goalsConceded").value,
-    ShootOutData: isShootout ? {
-      teamShootOutAttempts: document.getElementById("teamShootOutAttempts").value,
-      teamSOGoals: document.getElementById("teamSOGoals").value,
-      oppShootOutAttempts: document.getElementById("oppShootOutAttempts").value,
-      oppSOGoals: document.getElementById("oppSOGoals").value
-    } : null,
-    PlayerStats: []  // This will store player statistics
-  };
-
-  // Calculate points based on the game result
-  const teamGoals = parseInt(data.TeamGoals || 0);
-  const goalsConceded = parseInt(data.GoalsConceded || 0);
-  let teamPoints = 0;
-  let opponentPoints = 0;
-
-  if (teamGoals > goalsConceded) {
-    teamPoints = gameType === "Regulation" ? POINTS_CONFIG.RegulationWin :
-                 gameType === "ExtraTime" ? POINTS_CONFIG.ExtratimeWin :
-                 POINTS_CONFIG.ShootoutWin;
-    opponentPoints = gameType === "Regulation" ? POINTS_CONFIG.RegulationLoss :
-                     gameType === "ExtraTime" ? POINTS_CONFIG.ExtratimeLoss :
-                     POINTS_CONFIG.ShootoutLoss;
-  } else if (teamGoals < goalsConceded) {
-    teamPoints = gameType === "Regulation" ? POINTS_CONFIG.RegulationLoss :
-                 gameType === "ExtraTime" ? POINTS_CONFIG.ExtratimeLoss :
-                 POINTS_CONFIG.ShootoutLoss;
-    opponentPoints = gameType === "Regulation" ? POINTS_CONFIG.RegulationWin :
-                     gameType === "ExtraTime" ? POINTS_CONFIG.ExtratimeWin :
-                     POINTS_CONFIG.ShootoutWin;
-  }
-
-  // Add the calculated points to the data object
-  data.TeamPoints = teamPoints;
-  data.OpponentPoints = opponentPoints;
-
-  // Collect player stats for the team
-  const teamPlayers = allPlayers.filter(p => p.Team === team);
-  teamPlayers.forEach(p => {
-    const attempt = document.getElementById("team_so_" + p.PlayerID);
-    const goal = document.getElementById("team_so_goal_" + p.PlayerID);
-    data.PlayerStats.push({
-      PlayerID: p.PlayerID,
-      Team: team,
-      Opponent: opponentName,
-      Goals: document.getElementById("team_g_" + p.PlayerID).value,
-      Assists: document.getElementById("team_a_" + p.PlayerID).value,
-      ShootoutAttempts: attempt?.checked ? 1 : 0,
-      ShootoutGoals: (attempt?.checked && goal?.checked) ? 1 : 0
-    });
-  });
-  
-
-  // If opponent is tracked, collect their player stats too
-  if (opponentType === "Tracked") {
-    const oppPlayers = allPlayers.filter(p => p.Team === opponentName);
-    oppPlayers.forEach(p => {
-      const attempt = document.getElementById("opponent_so_" + p.PlayerID);
-      const goal = document.getElementById("opponent_so_goal_" + p.PlayerID);
-      data.PlayerStats.push({
-        PlayerID: p.PlayerID,
-        Team: opponentName,
-        Opponent: team,
-        Goals: document.getElementById("opponent_g_" + p.PlayerID).value,
-        Assists: document.getElementById("opponent_a_" + p.PlayerID).value,
-        ShootoutAttempts: attempt?.checked ? 1 : 0,
-        ShootoutGoals: (attempt?.checked && goal?.checked) ? 1 : 0
-      });
-    });
-  }
-  
-
-  // Submit the data to Google Sheets
-  const params = new URLSearchParams();
-  for (const key in data) {
-    if (key === "PlayerStats" || key === "ShootOutData") {
-      params.append(key, JSON.stringify(data[key]));
-    } else {
-      params.append(key, data[key]);
-    }
-  }
-
+/* ---------- Boot ---------- */
+document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const response = await fetch(scriptURL, {
-      method: "POST",
-      body: params
-    });
-
-    const text = await response.text();
-    alert(text); // Notify user of success
-  } catch (err) {
-    alert("Error submitting data: " + err.message); // Handle any errors
+    await loadTasksMeta();
+    setDefaultStartingDate();
+    setupListeners();
+    await restoreDraftIfAny();        // restore the single draft if present
+    updateLiveTotalPoints();          // sync totals after restore/defaults
+  } catch (e) {
+    console.error(e);
+    setStatus("⚠️ Page init issue. Try reloading.", "warn");
   }
+});
 
-
+/* ---------- Status helper (fixed bar) ---------- */
+function setStatus(msg, kind = "ok") {
+  const el = document.getElementById("statusMsg") || document.getElementById("message");
+  if (!el) return;
+  el.classList && el.classList.remove("ok","warn","err");
+  el.classList && el.classList.add(kind);
+  el.textContent = msg;
 }
 
+/* ---------- Dates / Defaults ---------- */
+function setDefaultStartingDate() {
+  const input = document.getElementById('startingDate');
+  if (!input) return;
+  const today = new Date();
+  const day = today.getDay(); // 0=Sun, 1=Mon, ... 6=Sat
+  const offsetToLastMonday = ((day + 6) % 7) + 7;
+  const lastMonday = new Date(today);
+  lastMonday.setDate(today.getDate() - offsetToLastMonday);
+  input.value = lastMonday.toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
+/* ---------- Tasks Meta & UI ---------- */
+async function loadTasksMeta() {
+  const res = await fetch(tasksMetaURL, { cache: "no-store" });
+  const csvText = await res.text();
+  const rows = csvText.trim().split('\n').map(r => r.split(','));
+  const headers = rows[0].map(h => h.trim());
+
+  tasks = rows.slice(1).map(row =>
+    Object.fromEntries(row.map((val, i) => [headers[i], val]))
+  );
+
+  const container = document.getElementById('taskInputs');
+  container.innerHTML = '';
+
+  tasks.forEach((task) => {
+    const taskId = `T${task["TaskID"]}_Score`;
+    const max = parseFloat(task.Max || 100);
+    const frac = Math.abs(parseFloat(task.FractionPoint)) || 1;
+
+    taskConfigByField[taskId] = { fraction: frac, max };
+
+    container.insertAdjacentHTML('beforeend', `
+      <label for="${taskId}">
+        <span>${escapeHTML(task.Task || '')}</span>
+        <span class="targets">Tar: ${escapeHTML(task.Target || '')} | Max: ${Number.isFinite(max) ? max : ''}</span>
+      </label>
+      <div class="task-input-row">
+        <button type="button" class="step-btn" data-dir="-1" data-field="${taskId}">−</button>
+        <input type="number" class="task-input" id="${taskId}" name="${taskId}" min="0" step="any" inputmode="numeric" enterkeyhint="next" />
+        <button type="button" class="step-btn" data-dir="1" data-field="${taskId}">+</button>
+      </div>
+      <progress id="${taskId}_progress" value="0" max="${parseFloat(task.Target) || 0}"></progress>
+      <span id="${taskId}_percent">0%</span>
+      <span id="${taskId}_points" class="task-points">0 pts</span>
+    `);
+  });
+}
+
+/* ---------- Listeners ---------- */
+function setupListeners() {
+  // Enter → next input
+  document.getElementById('taskInputs').addEventListener('keydown', (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const inputs = Array.from(document.querySelectorAll('.task-input'));
+      const index = inputs.indexOf(e.target);
+      if (index >= 0 && index < inputs.length - 1) inputs[index + 1].focus();
+    }
+  });
+
+  // +/- controls
+document.getElementById('taskInputs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.step-btn');
+  if (!btn) return;
+  const field = btn.dataset.field;
+  const dir = parseInt(btn.dataset.dir, 10) || 0;
+  const input = document.getElementById(field);
+  if (!input) return;
+
+  const maxAttr = Number(input.max);
+  const max = Number.isFinite(maxAttr) ? maxAttr : (taskConfigByField[field]?.max ?? Infinity);
+
+  const current = parseFloat(input.value) || 0;
+  const step = dir > 0 ? 1 : -1;   // force +/- 1 for all inputs
+  const next = clamp(current + step, 0, max);
+
+  input.value = Number.isFinite(next) ? round6(next) : 0;
+  updateLiveTotalPoints();
+});
+
+
+  // Total live updates
+  document.getElementById('taskInputs').addEventListener('input', updateLiveTotalPoints);
+
+  // Save/Submit bindings (Submit is the form's submit)
+  const saveBtn = document.getElementById('saveBtn');
+  if (saveBtn) saveBtn.addEventListener('click', handleSave);
+
+  const form = document.getElementById('adminForm');
+  form.addEventListener('submit', handleSubmit);
+}
+
+/* ---------- Scoring ---------- */
+function calculatePoints(scoreFieldName, rawScore) {
+  const task = tasks.find(t => `T${t["TaskID"]}_Score` === scoreFieldName);
+  if (!task) return 0;
+
+  const score = parseFloat(rawScore);
+  if (isNaN(score)) return 0;
+
+  const target = parseFloat(task.Target);
+  const completion = parseFloat(task.CompletionPoint);
+  const fraction = parseFloat(task.FractionPoint);
+  const isAvoidance = (task.IsAvoidance || "").toLowerCase() === 'true';
+
+  if ([target, completion, fraction].some(v => isNaN(v))) return 0;
+
+  if (isAvoidance) {
+    const delta = target - score;
+    return delta * fraction + (score <= target ? completion : 0);
+  } else {
+    return (score * fraction) + (score >= target ? completion : 0);
+  }
+}
+
+function updateLiveTotalPoints() {
+  const form = document.getElementById('adminForm');
+  const formData = new FormData(form);
+  let total = 0;
+
+  tasks.forEach(task => {
+    const scoreField = `T${task["TaskID"]}_Score`;
+    const raw = formData.get(scoreField);
+    const score = parseFloat(raw);
+
+    const points = calculatePoints(scoreField, score);
+    if (!isNaN(points)) total += points;
+
+    // Update UI per task
+    const progressBar = document.getElementById(`${scoreField}_progress`);
+    const percentText = document.getElementById(`${scoreField}_percent`);
+    const pointsSpan = document.getElementById(`${scoreField}_points`);
+    const target = parseFloat(task.Target);
+
+    const safeScore = isNaN(score) ? 0 : score;
+    const percent = (!isNaN(target) && target !== 0)
+      ? Math.min((safeScore / target) * 100, 100)
+      : 0;
+
+    if (progressBar) progressBar.value = safeScore;
+    if (percentText) percentText.textContent = `${Math.round(percent)}%`;
+    if (pointsSpan) pointsSpan.textContent = `${(points || 0).toFixed(2)} pts`;
+  });
+
+  const totalEl = document.getElementById("liveTotalPoints");
+  if (totalEl) totalEl.textContent = total.toFixed(2);
+}
+
+/* ---------- Payload + Actions ---------- */
+function collectPayload(mode) {
+  const form = document.getElementById('adminForm');
+  const formData = new FormData(form);
+  const team = formData.get("teamName");
+
+  let totalPoints = 0;
+  const scores = {};
+  tasks.forEach(task => {
+    const scoreField = `T${task["TaskID"]}_Score`;
+    const val = parseFloat(formData.get(scoreField)) || 0;
+    scores[scoreField] = val;
+    totalPoints += calculatePoints(scoreField, val);
+  });
+
+  const shortWeekDays = parseInt(formData.get("ShortWeek") || "7", 10);
+
+  return {
+    Mode: mode,                               // "save" or "submit"
+    RoundID: currentRoundID,
+    StartingDate: formData.get("StartingDate") || "",
+    Team: team || "",
+    Player: "",
+    ShortWeek: String(shortWeekDays),         // 7/6/5/4
+    Comments: formData.get("comments") || "",
+    TotalPoints: totalPoints.toFixed(2),
+    ...scores,
+    key: "asnLg_2@25"
+  };
+}
+
+async function handleSave() {
+  const team = document.getElementById('teamName').value;
+  const startingDate = document.getElementById('startingDate').value;
+  if (!team || !startingDate) {
+    setStatus("⚠️ Pick Team and Starting Date before saving.", "warn");
+    return;
+  }
+  const payload = collectPayload("save");
+  postViaIframe(payload, () => setStatus("💾 Draft saved.", "ok"));
+}
+
+async function handleSubmit(e) {
+  e.preventDefault();
+  if (!confirm("Do you really want to submit?")) return;
+
+  const payload = collectPayload("submit");
+  postViaIframe(payload, async () => {
+    setStatus("✅ Submitted!", "ok");
+    await delay(250);
+    await resetFormToDefaults();
+  });
+}
+
+/* ---------- Draft restore ---------- */
+async function restoreDraftIfAny() {
+  try {
+    const res = await fetch(draftsGetUrl, { cache: "no-store" });
+    if (!res.ok) return;
+    const drafts = await res.json();
+    if (!Array.isArray(drafts) || drafts.length === 0) return;
+
+    const raw = drafts[0]; // single draft row
+    const map = {};
+    Object.keys(raw).forEach(k => { map[normalizeKey_(k)] = raw[k]; });
+
+    // Basic fields
+    const sdRaw = map[normalizeKey_('StartingDate')];
+    const teamRaw = map[normalizeKey_('Team')];
+    if (sdRaw) document.getElementById('startingDate').value = toYMD_(sdRaw);
+    if (teamRaw) document.getElementById('teamName').value = String(teamRaw);
+
+    // ShortWeek radio (defaults to 7)
+    const sw = String(map[normalizeKey_('ShortWeek')] ?? '7');
+    const radio = document.querySelector(`input[name="ShortWeek"][value="${sw}"]`);
+    if (radio) radio.checked = true;
+
+    // Comments / Notes
+    const comments = map[normalizeKey_('Comments')] ?? map[normalizeKey_('Notes')] ?? '';
+    const commentsEl = document.getElementById('comments');
+    if (commentsEl) commentsEl.value = String(comments);
+
+    // Task inputs
+    tasks.forEach(task => {
+      const field = `T${task["TaskID"]}_Score`;
+      const normField = normalizeKey_(field); // e.g., t1_score
+      const valRaw = map[normField];
+      if (valRaw !== undefined && valRaw !== '') {
+        const val = parseFloat(valRaw);
+        const input = document.getElementById(field);
+        if (input) input.value = isNaN(val) ? 0 : val;
+      }
+    });
+
+    updateLiveTotalPoints();
+    setStatus("↩️ Draft restored.", "ok");
+  } catch (err) {
+    console.warn("Draft restore failed:", err);
+  }
+}
+
+/* ---------- Reset after submit ---------- */
+async function resetFormToDefaults() {
+  const form = document.getElementById('adminForm');
+  form.reset();
+
+  setDefaultStartingDate();
+  const regular = document.querySelector('input[name="ShortWeek"][value="7"]');
+  if (regular) regular.checked = true;
+
+  document.querySelectorAll('.task-input').forEach(inp => inp.value = '');
+  updateLiveTotalPoints();
+
+  setStatus("🆕 Ready for a new entry.", "ok");
+}
+
+/* ---------- Utils ---------- */
+function postViaIframe(payload, onComplete) {
+  try {
+    const iframeName = "hidden_iframe_" + Date.now();
+    const iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
+
+    const tempForm = document.createElement("form");
+    tempForm.method = "POST";
+    tempForm.action = postUrl;
+    tempForm.target = iframeName;
+    tempForm.style.display = "none";
+
+    for (let key in payload) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = payload[key];
+      tempForm.appendChild(input);
+    }
+
+    document.body.appendChild(tempForm);
+    tempForm.submit();
+
+    setTimeout(() => {
+      try { document.body.removeChild(tempForm); } catch {}
+      try { document.body.removeChild(iframe); } catch {}
+      if (typeof onComplete === 'function') onComplete();
+    }, 1600);
+  } catch (err) {
+    console.error("🚨 Post failed:", err);
+    setStatus("❌ Submission failed.", "err");
+  }
+}
+
+function toYMD_(v) {
+  // 1) Already YYYY-MM-DD
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+  // 2) Parseable date string
+  if (typeof v === 'string') {
+    const d = new Date(v);
+    if (!isNaN(d)) return d.toISOString().slice(0,10);
+  }
+
+  // 3) Google Sheets / Excel serial
+  if (typeof v === 'number' && isFinite(v)) {
+    const excelEpoch = Date.UTC(1899, 11, 30); // 1899-12-30
+    const ms = excelEpoch + Math.round(v * 86400000);
+    const d = new Date(ms);
+    if (!isNaN(d)) return d.toISOString().slice(0,10);
+  }
+
+  // 4) Date object
+  if (v instanceof Date && !isNaN(v)) {
+    return v.toISOString().slice(0,10);
+  }
+
+  return '';
+}
+
+function normalizeKey_(k) {
+  return String(k || '').replace(/\s+/g, '').replace(/[\r\n\t]+/g, '').toLowerCase();
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function clamp(x, min, max) {
+  return Math.max(min, Math.min(max, x));
+}
+
+function round6(n) {
+  return Math.round(n * 1e6) / 1e6;
+}
+
+function delay(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
